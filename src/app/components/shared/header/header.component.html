@@ -1,0 +1,72 @@
+<header class="header">
+  <nav class="nav-container">
+    <div class="nav-top">
+      <div class="logo">
+        <img 
+          *ngIf="clientLogoImage" 
+          [src]="clientLogoImage" 
+          [alt]="clientName || 'Logo'"
+          class="logo-image"
+        >
+        <span *ngIf="!clientLogoImage && clientName">{{ clientName }}</span>
+        <span *ngIf="!clientLogoImage && !clientName">Medonix</span>
+      </div>
+      
+      <div class="user-info" *ngIf="isAuthenticated">
+        <span class="user-roles">{{ getUserRoles() }}</span>
+      </div>
+      
+      <button type="button" class="mobile-menu-toggle" (click)="toggleMobileMenu($event)" *ngIf="isAuthenticated" aria-label="Toggle menu">
+        <i class="fas" [class.fa-bars]="!isMobileMenuOpen" [class.fa-times]="isMobileMenuOpen"></i>
+      </button>
+    </div>
+
+    <div class="nav-content" [class.show]="isMobileMenuOpen" *ngIf="isAuthenticated">
+      <div class="client-name" *ngIf="clientName || clientLogoImage">
+        <img 
+          *ngIf="clientLogoImage" 
+          [src]="clientLogoImage" 
+          [alt]="clientName || 'Logo'"
+          class="logo-image"
+        >
+        <span *ngIf="!clientLogoImage && clientName">{{ clientName }}</span>
+      </div>
+      <ul class="nav-links">
+        <li class="dropdown" *ngIf="hasMasterMenuItems()">
+          <a href="javascript:void(0)" (click)="toggleMasterMenu($event)" [class.active]="isMasterActive()">
+            <i class="fas fa-th-large"></i> Master
+            <i class="fas fa-chevron-down"></i>
+          </a>
+          <ul class="dropdown-menu" [class.show]="showMasterMenu">
+            <li *ngIf="permissions.canViewCategory">
+              <a routerLink="/category" routerLinkActive="active" (click)="closeAllMenus()">
+                <i class="fas fa-tags"></i> Category
+              </a>
+            </li>
+            <li *ngIf="permissions.canViewProduct">
+              <a routerLink="/product" routerLinkActive="active" (click)="closeAllMenus()">
+                <i class="fas fa-box"></i> Product
+              </a>
+            </li>
+            <li *ngIf="permissions.canViewCustomer">
+              <a routerLink="/customer" routerLinkActive="active" (click)="closeAllMenus()">
+                <i class="fas fa-users"></i> Vendor / Dealer
+              </a>
+            </li>
+            <li *ngIf="permissions.canViewUser">
+              <a routerLink="/users" routerLinkActive="active" (click)="closeAllMenus()">
+                <i class="fas fa-user-cog"></i> Users
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="nav-actions">
+        <button type="button" class="btn btn-logout" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+</header>
