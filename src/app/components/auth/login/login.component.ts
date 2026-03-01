@@ -1,11 +1,10 @@
-import { Component, Inject, PLATFORM_ID, OnDestroy } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { SnackbarService } from '../../../shared/services/snackbar.service';
-import { isPlatformBrowser } from '@angular/common';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
@@ -21,8 +20,7 @@ export class LoginComponent implements OnDestroy {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private snackbar: SnackbarService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    private snackbar: SnackbarService
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -37,20 +35,27 @@ export class LoginComponent implements OnDestroy {
     if (this.loginForm.valid) {
       this.isLoading = true;
       this.authService.login(this.loginForm.value)
-        .pipe(takeUntil(this.destroy$))
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => (this.isLoading = false))
+        )
         .subscribe({
-          next: (response) => {
-            // Check if we're in the browser before accessing localStorage
-            if (isPlatformBrowser(this.platformId)) {
-              localStorage.setItem('token', response.accessToken);
-              localStorage.setItem('user', JSON.stringify(response.user));
-            }
+          next: () => {
             this.snackbar.success('Login successful');
-            this.router.navigate([this.authService.getDefaultRoute()]);
+            const route = this.authService.getDefaultRoute();
+            this.router.navigateByUrl(route, { replaceUrl: true }).then(
+              navigated => {
+                if (!navigated) {
+                  // Guard or router blocked in-app navigation; force full redirect
+                  const hash = route.startsWith('/') ? route : '/' + route;
+                  window.location.href = `${window.location.origin}${window.location.pathname}#${hash}`;
+                }
+              }
+            );
           },
-          error: (error) => {
-            this.snackbar.error(error?.error?.message || 'Login failed');
-            this.isLoading = false;
+          error: (err) => {
+            const message = err?.error?.message ?? err?.message ?? 'Login failed';
+            this.snackbar.error(message);
           }
         });
     } else {

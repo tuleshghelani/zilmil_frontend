@@ -1,0 +1,84 @@
+{
+  "info": {
+    "_postman_id": "auth-controller-api",
+    "name": "Auth Controller API",
+    "description": "Full API for Auth Controller.\n\n**Base URL:** `{{baseUrl}}/api/auth`\n\n**Endpoints:**\n- POST /register - Register a new user\n- POST /login - Login and get JWT access token (and refresh token if returned)\n\n**Auth:** No auth required for these endpoints (use No Auth).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "noauth" },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Register User",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "register"]
+        },
+        "description": "Register a new user.\n\n**Request body:** email (required), password (required), firstName (required), lastName (required), clientId (optional).\n\n**Response:** ApiResponse with success message (no token in response; use Login to get token).",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"clientId\": 1\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"User registered successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "login"]
+        },
+        "description": "Login and get JWT access token.\n\n**Request body:** email (required), password (required), clientId (optional).\n\n**Response:** accessToken, tokenType (Bearer), clientId. If refreshToken is returned, save it for Refresh Token API.\n\nUse Tests tab or environment to save accessToken to {{token}} for other requests.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"clientId\": 1\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"tokenType\": \"Bearer\",\n  \"clientId\": 1\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.accessToken) {",
+              "        pm.environment.set('token', jsonData.accessToken);",
+              "        pm.environment.set('access_token', jsonData.accessToken);",
+              "    }",
+              "    if (jsonData.refreshToken) {",
+              "        pm.environment.set('refresh_token', jsonData.refreshToken);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

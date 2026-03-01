@@ -1,0 +1,132 @@
+{
+  "info": {
+    "_postman_id": "client-controller-api",
+    "name": "Client Controller API",
+    "description": "Full API for Client Controller.\n\n**Base URL:** `{{baseUrl}}/api/clients`\n\n**Endpoints:**\n- POST / - Create client\n- PUT /:id - Update client\n- DELETE /:id - Delete client\n- POST /list - List clients (filtered/paginated)\n- GET /:id - Get client by ID\n\n**Auth:** Bearer token ({{token}}).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Create Client",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/clients",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients"]
+        },
+        "description": "Create a new client.\n\n**Request body:** name, address, phone, email, logoImage, status.\n\n**Response:** ApiResponse with success message.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Client Name\",\n  \"address\": \"123 Street\",\n  \"phone\": \"+1234567890\",\n  \"email\": \"client@example.com\",\n  \"status\": \"A\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Client created successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Client",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/clients/{{id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients", "{{id}}"]
+        },
+        "description": "Update an existing client by ID.\n\n**Path:** id (client ID)\n\n**Request body:** name, address, phone, email, logoImage, status.\n\n**Response:** ApiResponse with success message.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Client Name\",\n  \"address\": \"456 Avenue\",\n  \"phone\": \"+0987654321\",\n  \"email\": \"updated@example.com\",\n  \"status\": \"A\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Client updated successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Client",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/clients/{{id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients", "{{id}}"]
+        },
+        "description": "Delete a client by ID.\n\n**Path:** id (client ID)\n\n**Response:** ApiResponse with success or error message."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Client deleted successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Clients",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/clients/list",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients", "list"]
+        },
+        "description": "Get list of clients with optional filters and pagination.\n\n**Request body:** search, status, page, size, sortBy, sortDir.\n\n**Response:** ApiResponse with data = list of client objects.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Clients retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Client Name\",\n      \"address\": \"123 Street\",\n      \"phone\": \"+1234567890\",\n      \"email\": \"client@example.com\",\n      \"status\": \"A\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Client By ID",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/clients/{{id}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "clients", "{{id}}"]
+        },
+        "description": "Get a single client by ID.\n\n**Path:** id (client ID)\n\n**Response:** ApiResponse with data = client object (id, name, address, phone, email, logoImage, status, createdAt, updatedAt)."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Client retrieved successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"Client Name\",\n    \"address\": \"123 Street\",\n    \"phone\": \"+1234567890\",\n    \"email\": \"client@example.com\",\n    \"status\": \"A\",\n    \"createdAt\": \"2024-01-01T00:00:00Z\",\n    \"updatedAt\": null\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

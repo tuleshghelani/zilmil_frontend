@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CategoryService } from '../../services/category.service';
-import { Category } from '../../models/category.model';
+import { Category, CategorySearchRequest } from '../../models/category.model';
 import { FormsModule } from '@angular/forms';
 import { SnackbarService } from '../../shared/services/snackbar.service';
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -61,7 +61,8 @@ export class CategoryComponent implements OnInit, OnDestroy {
   ) {
     this.categoryForm = this.fb.group({
       name: ['', Validators.required],
-      status: ['A', Validators.required]
+      status: ['A', Validators.required],
+      tenKgPrice: [null as number | null, [Validators.required, Validators.min(0.01)]]
     });
 
     this.searchForm = this.fb.group({
@@ -86,7 +87,7 @@ export class CategoryComponent implements OnInit, OnDestroy {
   openCreateDialog(): void {
     this.isEditing = false;
     this.editingId = undefined;
-    this.categoryForm.reset({ status: 'A' });
+    this.categoryForm.reset({ status: 'A', tenKgPrice: null });
     this.isDialogOpen = true;
   }
 
@@ -100,10 +101,12 @@ export class CategoryComponent implements OnInit, OnDestroy {
 
   loadCategories(): void {
     this.isLoading = true;
-    const searchParams = {
+    const searchParams: CategorySearchRequest = {
       ...this.searchForm.value,
+      page: this.currentPage,
       size: this.pageSize,
-      page: this.currentPage
+      sortBy: 'id',
+      sortDir: 'desc'
     };
 
     this.categoryService.searchCategories(searchParams)
@@ -131,29 +134,60 @@ export class CategoryComponent implements OnInit, OnDestroy {
   onSubmit(): void {
     if (this.categoryForm.valid) {
       this.isLoading = true;
-      const category = this.categoryForm.value;
+      const raw = this.categoryForm.getRawValue();
+      const tenKgPrice = raw.tenKgPrice != null && raw.tenKgPrice !== '' ? Number(raw.tenKgPrice) : undefined;
 
-      const request = this.isEditing && this.editingId
-        ? this.categoryService.updateCategory(this.editingId, category)
-        : this.categoryService.createCategory(category);
-
-      request.pipe(takeUntil(this.destroy$)).subscribe({
-        next: (response:any) => {
-          if (response?.success) {
-            this.snackbar.success(response.message || 'Category saved successfully');
-            this.closeDialog();
-            this.loadCategories();
-          } else {
-            this.snackbar.error(response.message || 'Operation failed');
-            this.isLoading = false;
-          }
-        },
-        error: (error) => {
-          const errorMessage = error?.error?.message || 'Operation failed';
-          this.snackbar.error(errorMessage);
-          this.isLoading = false;
-        }
-      });
+      if (this.isEditing && this.editingId) {
+        const category: Category = {
+          name: raw.name,
+          status: raw.status,
+          tenKgPrice
+        };
+        this.categoryService.updateCategory(this.editingId, category)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response: any) => {
+              if (response?.success) {
+                this.snackbar.success(response.message || 'Category saved successfully');
+                this.closeDialog();
+                this.loadCategories();
+              } else {
+                this.snackbar.error(response.message || 'Operation failed');
+                this.isLoading = false;
+              }
+            },
+            error: (error) => {
+              const errorMessage = error?.error?.message || 'Operation failed';
+              this.snackbar.error(errorMessage);
+              this.isLoading = false;
+            }
+          });
+      } else {
+        const category: Category = {
+          name: raw.name,
+          status: raw.status,
+          tenKgPrice
+        };
+        this.categoryService.createCategory(category)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response: any) => {
+              if (response?.success) {
+                this.snackbar.success(response.message || 'Category saved successfully');
+                this.closeDialog();
+                this.loadCategories();
+              } else {
+                this.snackbar.error(response.message || 'Operation failed');
+                this.isLoading = false;
+              }
+            },
+            error: (error) => {
+              const errorMessage = error?.error?.message || 'Operation failed';
+              this.snackbar.error(errorMessage);
+              this.isLoading = false;
+            }
+          });
+      }
     } else {
       Object.keys(this.categoryForm.controls).forEach(key => {
         const control = this.categoryForm.get(key);
@@ -174,7 +208,8 @@ export class CategoryComponent implements OnInit, OnDestroy {
     this.editingId = category.id;
     this.categoryForm.patchValue({
       name: category.name,
-      status: category.status
+      status: category.status,
+      tenKgPrice: category.tenKgPrice ?? null
     });
     
     this.isDialogOpen = true;
@@ -206,7 +241,7 @@ export class CategoryComponent implements OnInit, OnDestroy {
   resetForm(): void {
     this.isEditing = false;
     this.editingId = undefined;
-    this.categoryForm.reset({ status: 'A' });
+    this.categoryForm.reset({ status: 'A', tenKgPrice: null });
     this.categoryForm.markAsPristine();
     this.categoryForm.markAsUntouched();
   }

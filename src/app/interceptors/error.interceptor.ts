@@ -46,7 +46,7 @@ export class ErrorInterceptor implements HttpInterceptor {
           // Clone the request with new token
           const newRequest = request.clone({
             setHeaders: {
-              Authorization: `Bearer ${response.data.token}`
+              Authorization: `Bearer ${response.data.accessToken}`
             }
           });
           return next.handle(newRequest);

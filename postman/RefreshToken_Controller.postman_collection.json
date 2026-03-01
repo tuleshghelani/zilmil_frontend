@@ -1,0 +1,65 @@
+{
+  "info": {
+    "_postman_id": "refresh-token-controller-api",
+    "name": "Refresh Token Controller API",
+    "description": "Full API for Refresh Token Controller.\n\n**Base URL:** `{{baseUrl}}/api/refresh-token`\n\n**Endpoints:**\n- POST /new - Exchange refresh token for new access (and optionally refresh) token(s)\n\n**Request:** Body must contain the refresh token (from Login response).\n\n**Response:** success, message, data = { accessToken, refreshToken } (or similar). Use 400 for validation errors, 401 for invalid/expired token.\n\n**Auth:** No auth (send refresh token in body).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "noauth" },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Refresh Token",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/refresh-token/new",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "refresh-token", "new"]
+        },
+        "description": "Exchange a valid refresh token for new access token (and optionally a new refresh token).\n\n**Request body:** refreshToken (required) - the refresh token received from Login.\n\n**Response (200):** success: true, message: \"Token refreshed successfully\", data: { accessToken, refreshToken } (or similar map). Save accessToken to environment for subsequent API calls.\n\n**Response (400):** Validation error (e.g. missing refresh token).\n\n**Response (401):** Invalid or expired refresh token.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Token refreshed successfully\",\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"new-refresh-token-if-rotated\"\n  }\n}"
+        },
+        {
+          "name": "Invalid or Expired",
+          "status": "Unauthorized",
+          "code": 401,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired refresh token\"\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.data && jsonData.data.accessToken) {",
+              "        pm.environment.set('token', jsonData.data.accessToken);",
+              "        pm.environment.set('access_token', jsonData.data.accessToken);",
+              "    }",
+              "    if (jsonData.data && jsonData.data.refreshToken) {",
+              "        pm.environment.set('refresh_token', jsonData.data.refreshToken);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

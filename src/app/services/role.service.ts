@@ -22,6 +22,14 @@ export class RoleService {
       canViewCustomer: false,
       canViewUser: false
     };
+    if (userRoles.length === 0) {
+      return {
+        canViewCategory: true,
+        canViewProduct: true,
+        canViewCustomer: false,
+        canViewUser: false
+      };
+    }
     if (userRoles.includes(UserRole.ADMIN) || userRoles.includes(UserRole.STAFF_ADMIN)) {
       return {
         canViewCategory: true,

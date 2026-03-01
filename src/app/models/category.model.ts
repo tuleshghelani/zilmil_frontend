@@ -3,20 +3,24 @@ export interface Category {
   name: string;
   status: 'A' | 'I';
   remainingQuantity?: number;
+  tenKgPrice?: number;
   createdAt?: string;
   updatedAt?: string;
+  createdBy?: string;
 }
 
 export interface CategoryResponse {
-  success: boolean;
-  message: string;
+  success?: boolean;
+  message?: string;
   data: Category[];
 }
 
 export interface CategorySearchRequest {
-  name?: string;
-  status?: string;
-  size?: number;
-  page?: number;
   search?: string;
+  status?: string;
+  name?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: string;
 }

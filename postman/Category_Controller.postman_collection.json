@@ -1,0 +1,139 @@
+{
+  "info": {
+    "_postman_id": "category-controller-api",
+    "name": "Category Controller API",
+    "description": "Full API for Category Controller.\n\n**Base URL:** `{{baseUrl}}/api/categories`\n\n**Endpoints:**\n- POST / - Create category\n- PUT /:id - Update category\n- DELETE /:id - Delete category\n- POST /getCategories - Get categories list (filtered)\n- POST /search - Search categories (paginated)\n\n**Auth:** Bearer token (set in collection or environment).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Create Category",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/categories",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "categories"]
+        },
+        "description": "Create a new category.\n\n**Request body:** name (required), status (required, A or I), tenKgPrice (optional), remainingQuantity (optional).\n\n**Response:** ApiResponse with success message.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Category Name\",\n  \"status\": \"A\",\n  \"tenKgPrice\": 1000,\n  \"remainingQuantity\": 0\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Category created successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Category",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "categories", "{{categoryId}}"]
+        },
+        "description": "Update an existing category by ID.\n\n**Path:** id (category ID)\n\n**Request body:** name (required), status (required), tenKgPrice (optional).\n\n**Response:** ApiResponse with success message. A category_history record is created with old_ten_kg_price and new_ten_kg_price.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Category Name\",\n  \"status\": \"A\",\n  \"tenKgPrice\": 1200\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Category updated successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Category",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/categories/{{categoryId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "categories", "{{categoryId}}"]
+        },
+        "description": "Delete a category by ID. Fails if products are linked to this category.\n\n**Path:** id (category ID)\n\n**Response:** ApiResponse with success or error message."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Category deleted successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Categories",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/categories/getCategories",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "categories", "getCategories"]
+        },
+        "description": "Get categories list for the current client. Optional filters in body.\n\n**Request body:** search, status, name, page, size, sortBy, sortDir, clientId (set by server from token).\n\n**Response:** ApiResponse with data = array of category objects (id, name, status, createdAt, updatedAt, tenKgPrice, createdBy).",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Categories retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Category Name\",\n      \"status\": \"A\",\n      \"createdAt\": \"2024-01-01T00:00:00Z\",\n      \"updatedAt\": null,\n      \"tenKgPrice\": 1000,\n      \"createdBy\": \"John Doe\"\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Search Categories",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/categories/search",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "categories", "search"]
+        },
+        "description": "Search categories with pagination.\n\n**Request body:** search, status, page, size, sortBy, sortDir.\n\n**Response:** ApiResponse with data = { content: [...], totalElements, totalPages }.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Categories retrieved successfully\",\n  \"data\": {\n    \"content\": [\n      { \"id\": 1, \"name\": \"Category 1\", \"status\": \"A\", \"remainingQuantity\": 0, \"tenKgPrice\": 1000 }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1\n  }\n}"
+        }
+      ]
+    }
+  ]
+}

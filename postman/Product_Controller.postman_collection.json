@@ -1,0 +1,166 @@
+{
+  "info": {
+    "_postman_id": "product-controller-api",
+    "name": "Product Controller API",
+    "description": "Full API for Product Controller.\n\n**Base URL:** `{{baseUrl}}/api/products`\n\n**Endpoints:**\n- POST / - Create product (price and totalPrice computed from category.ten_kg_price, quantity, tinPrice)\n- PUT /:id - Update product\n- DELETE /:id - Delete product\n- POST /getProducts - Get products list\n- POST /search - Search products (paginated)\n- POST /export-pdf - Export products as PDF (returns binary PDF)\n\n**Auth:** Bearer token ({{token}}).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Create Product",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/products",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products"]
+        },
+        "description": "Create a new product. Backend computes price = (category.ten_kg_price/10)*quantity and total_price = price + tinPrice.\n\n**Request body:** name (required), categoryId (required), status (required, A or I), description, taxPercentage, tinPrice, quantity.\n\n**Response:** ApiResponse with success message.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Product Name\",\n  \"categoryId\": 1,\n  \"status\": \"A\",\n  \"description\": \"Product description\",\n  \"taxPercentage\": 5,\n  \"tinPrice\": 25.5,\n  \"quantity\": 14.556\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Product created successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Product",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "{{productId}}"]
+        },
+        "description": "Update an existing product by ID. price and totalPrice are recomputed from category, tinPrice, quantity.\n\n**Path:** id (product ID)\n\n**Request body:** name, categoryId, status, description, taxPercentage, tinPrice, quantity.\n\n**Response:** ApiResponse with success message.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Product Name\",\n  \"categoryId\": 1,\n  \"status\": \"A\",\n  \"description\": \"Updated description\",\n  \"taxPercentage\": 5,\n  \"tinPrice\": 30,\n  \"quantity\": 20\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Product updated successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Product",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/api/products/{{productId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "{{productId}}"]
+        },
+        "description": "Delete a product by ID. Fails if purchase/sale/quotation records reference this product.\n\n**Path:** id (product ID)\n\n**Response:** ApiResponse with success or error message."
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Product deleted successfully\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Products",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/getProducts",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "getProducts"]
+        },
+        "description": "Get products list for the current client. Optional filters in body.\n\n**Request body:** search, status, categoryId, page, size, sortBy, sortDir.\n\n**Response:** ApiResponse with data = array of product objects (id, name, taxPercentage, tinPrice, quantity, price, totalPrice).",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"categoryId\": null,\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Products retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Product Name\",\n      \"taxPercentage\": 5,\n      \"tinPrice\": 25.5,\n      \"quantity\": 14.556,\n      \"price\": 1455.6,\n      \"totalPrice\": 1481.1\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Search Products",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/search",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "search"]
+        },
+        "description": "Search products with pagination.\n\n**Request body:** search, status, categoryId, page, size, sortBy, sortDir.\n\n**Response:** ApiResponse with data = { content: [...], totalElements, totalPages }. Each item includes id, name, description, status, tinPrice, quantity, price, totalPrice, taxPercentage, categoryId, categoryName, categoryTenKgPrice.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"categoryId\": null,\n  \"page\": 0,\n  \"size\": 10,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"message\": \"Products retrieved successfully\",\n  \"data\": {\n    \"content\": [\n      {\n        \"id\": 1,\n        \"name\": \"Product Name\",\n        \"description\": \"Desc\",\n        \"status\": \"A\",\n        \"tinPrice\": 25.5,\n        \"quantity\": 14.556,\n        \"price\": 1455.6,\n        \"totalPrice\": 1481.1,\n        \"taxPercentage\": 5,\n        \"categoryId\": 1,\n        \"categoryName\": \"Category 1\",\n        \"categoryTenKgPrice\": 1000\n      }\n    ],\n    \"totalElements\": 1,\n    \"totalPages\": 1\n  }\n}"
+        }
+      ]
+    },
+    {
+      "name": "Export Products PDF",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/api/products/export-pdf",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "products", "export-pdf"]
+        },
+        "description": "Export products list as PDF. Uses same filters as search (search, status, categoryId). Pagination is ignored (all matching products included).\n\n**Request body:** search, status, categoryId, sortBy, sortDir.\n\n**Response:** Binary PDF (Content-Type: application/pdf). Save response as file or open in browser.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"\",\n  \"status\": \"A\",\n  \"categoryId\": null,\n  \"sortBy\": \"id\",\n  \"sortDir\": \"desc\"\n}"
+        }
+      },
+      "response": [
+        {
+          "name": "Success",
+          "status": "OK",
+          "code": 200,
+          "body": "(binary PDF)",
+          "header": [
+            { "key": "Content-Type", "value": "application/pdf" },
+            { "key": "Content-Disposition", "value": "filename=products.pdf" }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -14,8 +14,8 @@ export class ProductService {
   private apiUrl = `${environment.apiUrl}/api/products`;
   
   // In-memory cache for decrypted product data (avoids repeated decryption)
-  private cachedProducts: any[] | null = null;
-  private productsSubject = new BehaviorSubject<any[]>([]);
+  private cachedProducts: Product[] | null = null;
+  private productsSubject = new BehaviorSubject<Product[]>([]);
   
   /** Observable stream of cached products for reactive access */
   public readonly products$ = this.productsSubject.asObservable();
@@ -51,11 +51,12 @@ export class ProductService {
 
     return this.http.post<any>(`${this.apiUrl}/getProducts`, {
       search: params.search,
-      hsnCode: params.hsnCode,
-      productCode: params.productCode,
-      materialName: params.materialName,
       categoryId: params.categoryId,
-      status: params.status
+      status: params.status,
+      page: params.page,
+      size: params.size,
+      sortBy: params.sortBy,
+      sortDir: params.sortDir
     }).pipe(
       tap(response => {
         if (params.status === 'A' && response.success) {
@@ -79,23 +80,47 @@ export class ProductService {
   }
 
   createProduct(product: Product): Observable<any> {
-    return this.http.post(`${this.apiUrl}`, product);
+    const body = {
+      name: product.name,
+      categoryId: product.categoryId,
+      status: product.status,
+      description: product.description,
+      taxPercentage: product.taxPercentage,
+      tinPrice: product.tinPrice,
+      quantity: product.quantity
+    };
+    return this.http.post(`${this.apiUrl}`, body);
   }
 
   updateProduct(id: number, product: Product): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, product);
+    const body = {
+      name: product.name,
+      categoryId: product.categoryId,
+      status: product.status,
+      description: product.description,
+      taxPercentage: product.taxPercentage,
+      tinPrice: product.tinPrice,
+      quantity: product.quantity
+    };
+    return this.http.put(`${this.apiUrl}/${id}`, body);
   }
 
   deleteProduct(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
-  exportProducts(params: any): Observable<Blob> {
+  exportProducts(params: ProductSearchRequest): Observable<Blob> {
     const headers = new HttpHeaders({
       'Accept': 'application/pdf'
     });
-
-    return this.http.post(`${this.apiUrl}/export-pdf`, params, {
+    const body = {
+      search: params.search,
+      status: params.status,
+      categoryId: params.categoryId,
+      sortBy: params.sortBy ?? 'id',
+      sortDir: params.sortDir ?? 'desc'
+    };
+    return this.http.post(`${this.apiUrl}/export-pdf`, body, {
       headers: headers,
       responseType: 'blob'
     });

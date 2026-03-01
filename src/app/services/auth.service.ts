@@ -8,9 +8,9 @@ import { Router } from '@angular/router';
 
 interface TokenResponse {
   success: boolean;
-  message: string;
+  message?: string;
   data: {
-    token: string;
+    accessToken: string;
     refreshToken: string;
   };
 }
@@ -38,22 +38,59 @@ export class AuthService {
     private router: Router
   ) { }
 
-  login(credentials: { email: string; password: string }): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/api/auth/login`, credentials).pipe(
+  login(credentials: { email: string; password: string; clientId?: number }): Observable<any> {
+    const body = {
+      email: credentials.email,
+      password: credentials.password,
+      ...(credentials.clientId != null && { clientId: credentials.clientId })
+    };
+    return this.http.post(`${environment.apiUrl}/api/auth/login`, body).pipe(
       tap((response: any) => {
-        localStorage.setItem('token', response.accessToken);
-        localStorage.setItem('user', JSON.stringify({
-          firstName: response.firstName,
-          lastName: response.lastName,
-          email: response.email
-        }));
-        // Encrypt and store refresh token
-        const encryptedRefreshToken = this.encryptionService.encrypt(response.refreshToken);
-        localStorage.setItem('refreshToken', encryptedRefreshToken);
+        // Support both flat and wrapped { data: { ... } } response
+        const data = response?.data ?? response;
+        const accessToken = data?.accessToken ?? response?.accessToken;
+        const refreshToken = data?.refreshToken ?? response?.refreshToken;
+        const clientId = data?.clientId ?? response?.clientId;
+        const user = data?.user ?? response?.user;
 
-        // Encrypt and store roles
-        const encryptedRoles = this.encryptionService.encrypt(response.roles);
-        localStorage.setItem('userRoles', encryptedRoles);
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
+        }
+        if (clientId != null) {
+          localStorage.setItem('clientId', String(clientId));
+        }
+        if (refreshToken) {
+          try {
+            const encryptedRefreshToken = this.encryptionService.encrypt(refreshToken);
+            localStorage.setItem('refreshToken', encryptedRefreshToken);
+          } catch (_) { /* ignore encrypt error */ }
+        }
+
+        // Build user for storage when API returns flat shape (firstName, lastName, email, roles at top level)
+        const userForStorage = user ?? (data && (data.firstName != null || data.email != null)
+          ? { firstName: data.firstName, lastName: data.lastName, email: data.email, roles: data.roles }
+          : null);
+        if (userForStorage != null) {
+          try {
+            localStorage.setItem('user', typeof userForStorage === 'string' ? userForStorage : JSON.stringify(userForStorage));
+          } catch (_) { /* ignore */ }
+        }
+
+        // Roles: API may send string "[ADMIN]" or array ["ADMIN"]; store so getUserRoles() can parse (comma-separated or [x,y])
+        const rawRoles = userForStorage?.roles ?? data?.roles ?? response?.roles ?? user?.roles;
+        let rolesToStore: string;
+        if (rawRoles == null || rawRoles === '') {
+          rolesToStore = '[]';
+        } else if (typeof rawRoles === 'string') {
+          rolesToStore = rawRoles.trim(); // e.g. "[ADMIN]" or "ADMIN, STAFF_ADMIN"
+        } else if (Array.isArray(rawRoles)) {
+          rolesToStore = rawRoles.map((r: any) => typeof r === 'string' ? r : r?.name ?? r?.authority ?? r?.role).filter(Boolean).join(', ');
+        } else {
+          rolesToStore = '[]';
+        }
+        try {
+          localStorage.setItem('userRoles', this.encryptionService.encrypt(rolesToStore));
+        } catch (_) { /* ignore */ }
 
         this.authStateSubject.next(true);
       })
@@ -86,10 +123,12 @@ export class AuthService {
       { headers: {} }
     ).pipe(
       tap(response => {
-        if (response.success) {
-          localStorage.setItem('token', response.data.token);
-          const encryptedNewRefreshToken = this.encryptionService.encrypt(response.data.refreshToken);
-          localStorage.setItem('refreshToken', encryptedNewRefreshToken);
+        if (response.success && response.data) {
+          localStorage.setItem('token', response.data.accessToken);
+          if (response.data.refreshToken) {
+            const encryptedNewRefreshToken = this.encryptionService.encrypt(response.data.refreshToken);
+            localStorage.setItem('refreshToken', encryptedNewRefreshToken);
+          }
         }
         this.refreshTokenInProgress = false;
       }),
@@ -113,7 +152,8 @@ export class AuthService {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('refreshToken');
-    localStorage.clear();
+    localStorage.removeItem('userRoles');
+    localStorage.removeItem('clientId');
     this.authStateSubject.next(false);
   }
 
@@ -129,14 +169,18 @@ export class AuthService {
     const encryptedRoles = localStorage.getItem('userRoles');
     if (!encryptedRoles) return [];
 
-    const rolesString = this.encryptionService.decrypt(encryptedRoles);
-    // Handle the string format "[ADMIN, STAFF_ADMIN]"
-    // console.log(rolesString);
-    return rolesString
-      .replace('[', '')
-      .replace(']', '')
-      .split(',')
-      .map(role => role.trim());
+    try {
+      const rolesString = this.encryptionService.decrypt(encryptedRoles);
+      if (!rolesString || typeof rolesString !== 'string') return [];
+      return rolesString
+        .replace('[', '')
+        .replace(']', '')
+        .split(',')
+        .map(role => role.trim())
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
   }
 
   hasRole(role: string): boolean {
@@ -158,6 +202,9 @@ export class AuthService {
 
   getDefaultRoute(): string {
     const userRoles = this.getUserRoles();
+    if (userRoles.length === 0) {
+      return '/customer'; // /category requires ADMIN|STAFF_ADMIN; use route without RoleGuard
+    }
     if (userRoles.includes(UserRole.ADMIN) || userRoles.includes(UserRole.STAFF_ADMIN) ||
         userRoles.includes(UserRole.SALES_AND_MARKETING) || userRoles.includes(UserRole.DISPATCH) ||
         userRoles.includes(UserRole.REPORTER)) {
@@ -166,6 +213,6 @@ export class AuthService {
     if (userRoles.includes(UserRole.DEALER)) {
       return '/customer';
     }
-    return '/login';
+    return '/customer';
   }
 }

@@ -53,9 +53,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
           this.permissions = this.roleService.getMenuPermissions();
           this.loadCurrentUser();
         }
-        if (this.isAuthenticated && !localStorage.getItem('userRoles')) {
-          this.authService.logout();
-        }
       }
     );
     this.loadClientNameFromStorage();
@@ -189,8 +186,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   getUserDisplayName(): string {
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+    try {
+      const userStr = localStorage.getItem('user');
+      if (!userStr) return 'User';
+      const user = JSON.parse(userStr);
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User';
+    } catch {
+      return 'User';
+    }
   }
 
   getUserRoles(): string {

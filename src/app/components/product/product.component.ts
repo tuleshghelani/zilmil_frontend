@@ -2,9 +2,8 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { CategoryService } from '../../services/category.service';
-import { Product, ProductMainType } from '../../models/product.model';
+import { Product } from '../../models/product.model';
 import { Category } from '../../models/category.model';
-import { ToastrService } from 'ngx-toastr';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { LoaderComponent } from '../../shared/components/loader/loader.component';
 import { CommonModule } from '@angular/common';
@@ -73,46 +72,54 @@ export class ProductComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadCategories();
     this.loadProducts();
+    this.setupCalculatedPriceUpdates();
+  }
+
+  private setupCalculatedPriceUpdates(): void {
+    this.productForm.get('categoryId')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateCalculatedPrices());
+    this.productForm.get('quantity')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateCalculatedPrices());
+    this.productForm.get('tinPrice')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => this.updateCalculatedPrices());
+  }
+
+  /** price = (category.tenKgPrice / 10) * quantity; totalPrice = price + tinPrice */
+  updateCalculatedPrices(): void {
+    const categoryId = this.productForm.get('categoryId')?.value;
+    const quantity = this.productForm.get('quantity')?.value != null && this.productForm.get('quantity')?.value !== ''
+      ? Number(this.productForm.get('quantity')?.value) : null;
+    const tinPrice = this.productForm.get('tinPrice')?.value != null && this.productForm.get('tinPrice')?.value !== ''
+      ? Number(this.productForm.get('tinPrice')?.value) : null;
+    const category = this.categories.find(c => c.id === +categoryId);
+    const tenKgPrice = category?.tenKgPrice != null ? Number(category.tenKgPrice) : null;
+    let price: number | null = null;
+    let totalPrice: number | null = null;
+    if (tenKgPrice != null && quantity != null) {
+      price = (tenKgPrice / 10) * quantity;
+      totalPrice = price + (tinPrice ?? 0);
+    }
+    const priceDisplay = price != null ? this.formatNumber(price) : '';
+    const totalPriceDisplay = totalPrice != null ? this.formatNumber(totalPrice) : '';
+    this.productForm.get('price')?.setValue(priceDisplay, { emitEvent: false });
+    this.productForm.get('totalPrice')?.setValue(totalPriceDisplay, { emitEvent: false });
+  }
+
+  private formatNumber(value: number): string {
+    return Number.isInteger(value) ? String(value) : value.toFixed(2);
   }
 
   private initializeForms(): void {
     this.productForm = this.fb.group({
       name: ['', [Validators.required]],
-      hsnCode: [''],
-      productCode: ['', [Validators.maxLength(100)]],
-      materialName: ['', [Validators.maxLength(150)]],
       categoryId: ['', [Validators.required]],
-      minimumStock: [0, [Validators.required, Validators.min(0)]],
-      purchaseAmount: [0, [Validators.required, Validators.min(0)]],
-      saleAmount: [null, [Validators.required, Validators.min(0)]],
-      measurement: ['NOS'],
       status: ['A'],
       description: [''],
-      remainingQuantity: [0, [Validators.required]],
-      blockedQuantity: [0, [Validators.required, Validators.min(0)]],
-      totalRemainingQuantity: [{ value: 0, disabled: true }],
-      taxPercentage: [5, [Validators.required, Validators.min(0), Validators.max(100)]]
+      tinPrice: [null as number | null, [Validators.min(0)]],
+      quantity: [null as number | null, [Validators.min(0)]],
+      price: [{ value: '', disabled: true }],
+      totalPrice: [{ value: '', disabled: true }]
     });
-
-    // Add value change subscriptions for automatic calculation
-    this.productForm.get('remainingQuantity')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.calculateTotalRemainingQuantity();
-      });
-
-    this.productForm.get('blockedQuantity')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.calculateTotalRemainingQuantity();
-      });
-
 
     this.searchForm = this.fb.group({
       search: [''],
-      hsnCode: [''],
-      productCode: [''],
-      materialName: [''],
       categoryId: [''],
       status: ['A']
     });
@@ -124,6 +131,7 @@ export class ProductComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.categories = response.data;
+          this.updateCalculatedPrices();
         },
         error: () => {
           this.snackbarService.error('Failed to load categories');
@@ -138,8 +146,10 @@ export class ProductComponent implements OnInit, OnDestroy {
 
     const searchParams = {
       ...this.searchForm.value,
+      page: this.currentPage,
       size: this.pageSize,
-      page: this.currentPage
+      sortBy: 'id',
+      sortDir: 'desc'
     };
 
     this.productService.searchProducts(searchParams)
@@ -179,8 +189,14 @@ export class ProductComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
-    const productData: any = {
-      ...this.productForm.getRawValue()
+    const raw = this.productForm.getRawValue();
+    const productData: Product = {
+      name: raw.name,
+      categoryId: Number(raw.categoryId),
+      status: raw.status,
+      description: raw.description ?? undefined,
+      tinPrice: raw.tinPrice != null && raw.tinPrice !== '' ? Number(raw.tinPrice) : undefined,
+      quantity: raw.quantity != null && raw.quantity !== '' ? Number(raw.quantity) : undefined
     };
 
     const request = this.isEditing
@@ -221,31 +237,19 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.isEditing = true;
     this.editingId = product.id;
 
-    // Strip HTML tags from product name for plain text input
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = product.name;
     const plainTextName = tempDiv.textContent || tempDiv.innerText || product.name;
 
     this.productForm.patchValue({
       name: plainTextName,
-      hsnCode: product.hsnCode,
-      productCode: product.productCode,
-      materialName: product.materialName,
       categoryId: product.categoryId,
-      description: product.description,
-      minimumStock: product.minimumStock,
-      purchaseAmount: product.purchaseAmount,
-      saleAmount: product.saleAmount,
-      measurement: product.measurement,
+      description: product.description ?? '',
       status: product.status,
-      remainingQuantity: product.remainingQuantity,
-      blockedQuantity: product.blockedQuantity,
-      totalRemainingQuantity: product.totalRemainingQuantity,
-      taxPercentage: product.taxPercentage ?? 5
+      tinPrice: product.tinPrice ?? null,
+      quantity: product.quantity ?? null
     });
-
-    // Calculate total remaining quantity after setting values
-    this.calculateTotalRemainingQuantity();
+    this.updateCalculatedPrices();
 
     this.isDialogOpen = true;
   }
@@ -282,15 +286,11 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.editingId = undefined;
     this.productForm.reset({
       status: 'A',
-      productCode: '',
-      materialName: '',
-      purchaseAmount: 0,
-      saleAmount: null,
-      measurement: 'NOS',
-      taxPercentage: 5,
-      remainingQuantity: 0,
-      blockedQuantity: 0
+      description: '',
+      tinPrice: null,
+      quantity: null
     });
+    this.updateCalculatedPrices();
   }
 
   onSearch(event?: Event): void {
@@ -309,9 +309,6 @@ export class ProductComponent implements OnInit, OnDestroy {
   resetFilters(): void {
     this.searchForm.reset({
       search: '',
-      hsnCode: '',
-      productCode: '',
-      materialName: '',
       categoryId: '',
       status: 'A'
     });
@@ -334,20 +331,11 @@ export class ProductComponent implements OnInit, OnDestroy {
     this.editingId = undefined;
     this.productForm.reset({
       status: 'A',
-      productCode: '',
-      materialName: '',
-      minimumStock: 0,
-      purchaseAmount: 0,
-      saleAmount: null,
-      measurement: 'NOS',
-      taxPercentage: 5,
-      remainingQuantity: 0,
-      blockedQuantity: 0
+      description: '',
+      tinPrice: null,
+      quantity: null
     });
-
-    // Calculate initial total remaining quantity
-    this.calculateTotalRemainingQuantity();
-
+    this.updateCalculatedPrices();
     this.isDialogOpen = true;
   }
 
@@ -365,41 +353,13 @@ export class ProductComponent implements OnInit, OnDestroy {
     return field ? field.invalid && (field.dirty || field.touched) : false;
   }
 
-
-  validateRemainingQuantity() {
-    const remainingQuantity = this.productForm.get('remainingQuantity')?.value;
-    const blockedAmount = this.productForm.get('blockedQuantity')?.value;
-
-    // if (remainingQuantity < blockedAmount) {
-    //   this.productForm.get('remainingQuantity')?.setErrors({ invalid: true });
-    // } else {
-    //   this.productForm.get('remainingQuantity')?.setErrors(null);
-    // }
-  }
-
-  // Custom validator to ensure saleAmount is positive and greater than 0
-  private positiveNumberValidator(): any {
-    return (control: any) => {
-      if (control.value === null || control.value === undefined || control.value === '') {
-        return { required: true };
-      }
-      const value = Number(control.value);
-      if (isNaN(value)) {
-        return { invalidNumber: true };
-      }
-      if (value <= 0) {
-        return { min: { min: 0.01, actual: value } };
-      }
-      return null;
-    };
-  }
-
   exportProducts(): void {
-    const searchParams = { ...this.searchForm.value };
-    delete searchParams.pageSize;
-    delete searchParams.currentPage;
-
-    this.productService.exportProducts(searchParams)
+    const params = {
+      ...this.searchForm.value,
+      sortBy: 'id',
+      sortDir: 'desc'
+    };
+    this.productService.exportProducts(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: Blob) => {
@@ -415,17 +375,6 @@ export class ProductComponent implements OnInit, OnDestroy {
           this.snackbarService.error('Failed to export products');
         }
       });
-  }
-
-  // Add new method for calculation
-  private calculateTotalRemainingQuantity(): void {
-    const remainingQuantity = this.productForm.get('remainingQuantity')?.value ?? 0;
-    const blockedQuantity = this.productForm.get('blockedQuantity')?.value ?? 0;
-    const totalRemaining = remainingQuantity + blockedQuantity;
-
-    this.productForm.patchValue({
-      totalRemainingQuantity: totalRemaining
-    }, { emitEvent: false });
   }
 
   ngOnDestroy(): void {
