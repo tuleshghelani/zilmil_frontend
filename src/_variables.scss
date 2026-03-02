@@ -1,16 +1,20 @@
 // Primary Colors - Deep navy-teal
-$primary: #003a58;       // Deep navy-teal
-$primary-light: #2a5f79; // Harmonized lighter shade
-$primary-lighter: #4f7f94; // Even lighter shade
-$primary-lightest: #a6c0cd; // Soft pastel for backgrounds
-$primary-dark: #00263a;  // Darker shade for emphasis
+$primary: #00adda;       // Blue
+
+// Derived from $primary
+$primary-dark: darken($primary, 14%);
+$primary-light: mix(#fff, $primary, 20%);
+$primary-lighter: mix(#fff, $primary, 45%);
+$primary-lightest: mix(#fff, $primary, 88%);
 
 // Secondary Colors - Vibrant teal accent
-$secondary: #00999c;      // Vibrant teal accent
-$secondary-light: #26b3b5; // Harmonized lighter teal
-$secondary-lighter: #6bcfd1; // Even lighter teal
-$secondary-lightest: #b9ebec; // Soft UI fills
-$secondary-dark: #007275;  // Darker teal for contrast
+$secondary: #1f7b9c;      // Vibrant teal accent
+
+// Derived from $secondary
+$secondary-dark: darken($secondary, 12%);
+$secondary-light: mix(#fff, $secondary, 18%);
+$secondary-lighter: mix(#fff, $secondary, 42%);
+$secondary-lightest: mix(#fff, $secondary, 85%);
 
 // Neutral Colors - Cool, professional grays tuned for the theme
 $neutral-dark: #3b4248;

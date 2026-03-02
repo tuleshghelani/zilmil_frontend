@@ -168,7 +168,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   isMasterActive(): boolean {
     const currentUrl = this.router.url;
-    return ['/category', '/product', '/customer', '/users'].some(path =>
+    return ['/category', '/category-history', '/product', '/customer', '/users'].some(path =>
       currentUrl.startsWith(path)
     );
   }

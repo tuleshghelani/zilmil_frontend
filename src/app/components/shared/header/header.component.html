@@ -43,21 +43,26 @@
                 <i class="fas fa-tags"></i> Category
               </a>
             </li>
+            <li *ngIf="permissions.canViewCategory">
+              <a routerLink="/category-history" routerLinkActive="active" (click)="closeAllMenus()">
+                <i class="fas fa-history"></i> Category History
+              </a>
+            </li>
             <li *ngIf="permissions.canViewProduct">
               <a routerLink="/product" routerLinkActive="active" (click)="closeAllMenus()">
                 <i class="fas fa-box"></i> Product
               </a>
             </li>
-            <li *ngIf="permissions.canViewCustomer">
+            <!-- <li *ngIf="permissions.canViewCustomer">
               <a routerLink="/customer" routerLinkActive="active" (click)="closeAllMenus()">
                 <i class="fas fa-users"></i> Vendor / Dealer
               </a>
-            </li>
-            <li *ngIf="permissions.canViewUser">
+            </li> -->
+            <!-- <li *ngIf="permissions.canViewUser">
               <a routerLink="/users" routerLinkActive="active" (click)="closeAllMenus()">
                 <i class="fas fa-user-cog"></i> Users
               </a>
-            </li>
+            </li> -->
           </ul>
         </li>
       </ul>

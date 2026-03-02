@@ -1,0 +1,92 @@
+<div class="category-history-container">
+  <app-loader [show]="isLoading"></app-loader>
+  <div class="search-section card">
+    <h3>Search Category History</h3>
+    <div class="search-container">
+      <form [formGroup]="searchForm" class="search-form">
+        <div class="search-row search-row-filters">
+          <div class="form-group">
+            <label for="categoryHistoryCategory">Category</label>
+            <select id="categoryHistoryCategory" class="form-control" formControlName="categoryId">
+              <option [ngValue]="null">All categories</option>
+              <option *ngFor="let cat of categories" [ngValue]="cat.id">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div class="form-group form-group-search">
+            <label for="categoryHistorySearch">Search by name</label>
+            <input
+              type="text"
+              id="categoryHistorySearch"
+              class="form-control"
+              placeholder="Category name..."
+              formControlName="search"
+            >
+          </div>
+          <div class="form-group">
+            <label for="categoryHistoryDateFrom">From date</label>
+            <input
+              type="date"
+              id="categoryHistoryDateFrom"
+              class="form-control"
+              formControlName="dateFrom"
+            >
+          </div>
+          <div class="form-group">
+            <label for="categoryHistoryDateTo">To date</label>
+            <input
+              type="date"
+              id="categoryHistoryDateTo"
+              class="form-control"
+              formControlName="dateTo"
+            >
+          </div>
+          <div class="form-group form-group-submit">
+            <label class="form-group-submit-label">&nbsp;</label>
+            <button type="button" class="search-btn btn btn-primary" (click)="onSearch()">
+              <i class="fas fa-search me-2"></i> Search
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="history-list card">
+    <h2>Category History</h2>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Old 10kg price</th>
+            <th>New 10kg price</th>
+            <th>Changed at</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of history">
+            <td>{{ row.id }}</td>
+            <td>{{ row.categoryName }}</td>
+            <td>{{ row.oldTenKgPrice }}</td>
+            <td>{{ row.newTenKgPrice }}</td>
+            <td>{{ formatDate(row.createdAt) }}</td>
+          </tr>
+          <tr *ngIf="history.length === 0">
+            <td colspan="5" class="text-center">No category history found</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      *ngIf="totalPages > 0"
+      [currentPage]="currentPage"
+      [pageSize]="pageSize"
+      [totalElements]="totalElements"
+      [pageSizeOptions]="pageSizeOptions"
+      (pageChange)="onPageChange($event)"
+      (pageSizeChange)="onPageSizeChange($event)"
+    ></app-pagination>
+  </div>
+</div>

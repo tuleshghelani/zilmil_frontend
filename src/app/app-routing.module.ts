@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes, PreloadAllModules } from '@angular/router';
 import { LoginComponent } from './components/auth/login/login.component';
 import { CategoryComponent } from './components/category/category.component';
+import { CategoryHistoryComponent } from './components/category-history/category-history.component';
 import { ProductComponent } from './components/product/product.component';
 import { CustomerComponent } from './components/customer/customer.component';
 import { UserListComponent } from './components/users/user-list/user-list.component';
@@ -16,6 +17,12 @@ const routes: Routes = [
   {
     path: 'category',
     component: CategoryComponent,
+    canActivate: [AuthGuard, RoleGuard],
+    data: { roles: ['ADMIN', 'STAFF_ADMIN'] }
+  },
+  {
+    path: 'category-history',
+    component: CategoryHistoryComponent,
     canActivate: [AuthGuard, RoleGuard],
     data: { roles: ['ADMIN', 'STAFF_ADMIN'] }
   },

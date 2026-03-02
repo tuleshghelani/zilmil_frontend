@@ -11377,16 +11377,16 @@ fieldset:disabled .btn {
 
 /* src/styles.scss */
 :root {
-  --primary: #003a58;
-  --primary-light: #2a5f79;
-  --primary-lighter: #4f7f94;
-  --primary-lightest: #a6c0cd;
-  --primary-dark: #00263a;
-  --secondary: #00999c;
-  --secondary-light: #26b3b5;
-  --secondary-lighter: #6bcfd1;
-  --secondary-lightest: #b9ebec;
-  --secondary-dark: #007275;
+  --primary: #00adda;
+  --primary-light: #33bde1;
+  --primary-lighter: #73d2eb;
+  --primary-lightest: #e0f5fb;
+  --primary-dark: #007493;
+  --secondary: #1f7b9c;
+  --secondary-light: #4793ae;
+  --secondary-lighter: #7db2c6;
+  --secondary-lightest: #ddebf0;
+  --secondary-dark: #155369;
   --neutral-dark: #3b4248;
   --neutral-medium: #8a949c;
   --neutral-light: #b3bcc2;
