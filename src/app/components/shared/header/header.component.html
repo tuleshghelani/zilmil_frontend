@@ -2,14 +2,14 @@
   <nav class="nav-container">
     <div class="nav-top">
       <div class="logo">
-        <img 
+        <!-- <img 
           *ngIf="clientLogoImage" 
           [src]="clientLogoImage" 
           [alt]="clientName || 'Logo'"
           class="logo-image"
         >
-        <span *ngIf="!clientLogoImage && clientName">{{ clientName }}</span>
-        <span *ngIf="!clientLogoImage && !clientName">Zilmil-admin</span>
+        <span *ngIf="!clientLogoImage && clientName">{{ clientName }}</span> -->
+        <span>Zilmil</span>
       </div>
       
       <div class="user-info" *ngIf="isAuthenticated">
@@ -23,13 +23,8 @@
 
     <div class="nav-content" [class.show]="isMobileMenuOpen" *ngIf="isAuthenticated">
       <div class="client-name" *ngIf="clientName || clientLogoImage">
-        <img 
-          *ngIf="clientLogoImage" 
-          [src]="clientLogoImage" 
-          [alt]="clientName || 'Logo'"
-          class="logo-image"
-        >
-        <span *ngIf="!clientLogoImage && clientName">{{ clientName }}</span>
+        
+        <span >Zilmil</span>
       </div>
       <ul class="nav-links">
         <li class="dropdown" *ngIf="hasMasterMenuItems()">

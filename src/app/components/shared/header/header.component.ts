@@ -203,7 +203,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
-    window.location.href = window.location.origin + '/login?_t=' + new Date().getTime();
+    this.router.navigate(['/login']);
   }
 
   isAdmin(): boolean {
